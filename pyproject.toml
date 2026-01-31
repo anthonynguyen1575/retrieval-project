@@ -5,6 +5,7 @@ description = "Lab 3 scaffold to P2 doc retrieval system"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "chromadb>=1.4.1",
     "fastapi>=0.121.1",
     "httpx>=0.28.1",
     "pydantic>=2.12.4",
