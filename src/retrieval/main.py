@@ -1,31 +1,52 @@
 """
 Lab 3 FastAPI API.
+
 @author: Kevin Lundeen
 Seattle University, ARIN 5360
-@see: https://catalog.seattleu.edu/preview_course_nopop.php?catoid=55&coid
-=190380
-@version: 0.1.0+w26
+@see: https://catalog.seattleu.edu/preview_course_nopop.php?catoid=55&coid=190380
+@version: 1.0.0+w26
 """
 
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 
+from retrieval.retriever import DocumentRetriever
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Global retriever instance
+retriever = None
 
 
 class HealthResponse(BaseModel):
     """Response model for health check."""
 
     status: str
+    documents_indexed: int
     message: str
+
+
+class SearchRequest(BaseModel):
+    """Request model for search."""
+
+    query: str
+    n_results: int = 5
+
+
+class SearchResponse(BaseModel):
+    """Response model for search."""
+
+    query: str
+    results: list[dict]
+    count: int
 
 
 # Define lifespan function to load models on startup
@@ -34,8 +55,12 @@ async def lifespan(_app: FastAPI):
     # Code before the 'yield' is executed during application startup
     try:
         logger.info("Loading models...")
-        # FIXME: Load your model(s) here
-        logger.info("Model loaded successfully!")
+
+        # Index documents from the documents/ directory
+        global retriever
+        retriever = DocumentRetriever()
+        num_docs = retriever.index_documents("documents")
+        logger.info(f"Indexed {num_docs} documents successfully!")
     except Exception as e:
         # Don't crash the server, but log the error
         logger.error(f"Failed to load model: {str(e)}")
@@ -49,8 +74,8 @@ async def lifespan(_app: FastAPI):
 # Initialize FastAPI app
 app = FastAPI(
     title="FIXME: API Title",
-    description="FIXME: API Description",
-    version="0.1.0",
+    description="Lab3: Semantic search system using ChromaDB and sentence transformers",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -66,6 +91,34 @@ app.add_middleware(
 )
 
 
+@app.post("/search", response_model=SearchResponse)
+async def search(request: SearchRequest):
+    """
+    Search for documents relevant to the query.
+
+    Args:
+        request: SearchRequest with query and optional n_results
+
+    Returns:
+        SearchResponse with results
+    """
+    if retriever is None:
+        raise HTTPException(status_code=503, detail="Retriever not initialized")
+
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    if request.n_results < 1 or request.n_results > 20:
+        raise HTTPException(status_code=400, detail="n_results must be between 1 and 20")
+
+    try:
+        results = retriever.search(request.query, request.n_results)
+        return SearchResponse(query=request.query, results=results, count=len(results))
+    except Exception as e:
+        logger.error(f"Search error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Search failed")
+
+
 # Implement health check endpoint
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -75,7 +128,15 @@ async def health_check():
     Returns:
         Health status
     """
-    return HealthResponse(status="healthy", message="API is running and ready")
+    if retriever is None:
+        return HealthResponse(
+            status="unhealthy", message="Retriever not initialized", documents_indexed=0
+        )
+    return HealthResponse(
+        status="healthy",
+        message="API is running and ready",
+        documents_indexed=retriever.document_count,
+    )
 
 
 # Add error handler for general exceptions
