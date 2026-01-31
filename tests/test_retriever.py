@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from retrieval.retriever import DocumentRetriever
-from loader import DocumentLoader
+
 
 @pytest.fixture
 def retriever():

@@ -8,17 +8,16 @@ Seattle University, ARIN 5360
 @version: 1.0.0+w26
 """
 
-
-from loader import DocumentLoader
-from embeddings import DocumentEmbedder
-from store import VectorStore
+from .embeddings import DocumentEmbedder
+from .loader import DocumentLoader
+from .store import VectorStore
 
 
 class DocumentRetriever:
     """High-level interface for document retrieval."""
 
     def __init__(self):
-        """ Initialize retriever with default components."""
+        """Initialize retriever with default components."""
         self.loader = DocumentLoader()
         self.store = VectorStore(DocumentEmbedder())
         self._indexed = False  # flag to indicate we've done some indexing
