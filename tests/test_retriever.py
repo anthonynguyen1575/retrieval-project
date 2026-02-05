@@ -137,7 +137,8 @@ def test_with_chunks(retriever):
     test_dir = Path(__file__).parent
     sample_dir = str(test_dir / "data")
     retriever.index_documents(sample_dir)
-    results = retriever.search("Is a crucifix better than a garlic as a vampire repellent?")
+    results = retriever.search("Is a crucifix better than a garlic as a vampire "
+                               "repellent?")
 
     # check that the five distance add up to something pretty small
     distance_sum = sum(result["distance"] for result in results)

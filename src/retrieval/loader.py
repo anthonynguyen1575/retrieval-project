@@ -72,16 +72,13 @@ class DocumentLoader:
         path = Path(directory)
         if not path.is_dir() or not path.exists():
             raise ValueError(f"Directory '{directory}' does not exist.")
+
+        # load text files
         for filepath in path.glob("*.txt"):
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    text = f.read().strip()
-                if text:
-                    documents.append(
-                        {"id": filepath.stem, "text": text, "metadata": {"filename": filepath.name}}
-                    )
-            except Exception as e:
-                logger.warning(f"Warning: Failed to load document {filepath} : {e}")
+
+            docs = self._load_text_file(filepath)
+            documents.extend(docs)
+
         return documents
 
     def _load_text_file(self, filepath: Path) -> list[dict]:
@@ -94,7 +91,7 @@ class DocumentLoader:
                 return []
 
             doc_id = filepath.stem
-            metadata = {"filename": filepath.stem, "type": "txt"}
+            metadata = {"filename": filepath.name, "type": "txt"}
 
             if self.chunker:
                 chunks = self.chunker.chunk_text(text, doc_id)
@@ -106,5 +103,5 @@ class DocumentLoader:
                 return [{"id": doc_id, "text": text, "metadata": metadata}]
 
         except Exception as e:
-            logger.warning(f"Warning: Failed to load document {filepath} : {e}")
+            logger.warning(f"Warning: Failed to load  {filepath} : {e}")
             return []
