@@ -137,8 +137,7 @@ def test_with_chunks(retriever):
     test_dir = Path(__file__).parent
     sample_dir = str(test_dir / "data")
     retriever.index_documents(sample_dir)
-    results = retriever.search("Is a crucifix better than a garlic as a vampire "
-                               "repellent?")
+    results = retriever.search("Is a crucifix better than a garlic as a vampire repellent?")
 
     # check that the five distance add up to something pretty small
     distance_sum = sum(result["distance"] for result in results)
@@ -153,3 +152,7 @@ def test_with_chunks(retriever):
     # (This may be brittle as we upgrade the embedding model!)
     chunks = set(result["metadata"]["chunk"] for result in results)
     assert chunks & {373, 257, 568, 206}  # picked at least one of these
+
+    results = retriever.search("What MSAI courses are 5 credits?")
+    assert len(results) > 0
+    assert "5 credits" in results[0]["text"]

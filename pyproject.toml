@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.121.1",
     "httpx>=0.28.1",
     "pydantic>=2.12.4",
+    "pypdf>=6.6.2",
     "pytest>=9.0.1",
     "python-multipart>=0.0.20",
     "sentence-transformers>=5.2.2",
