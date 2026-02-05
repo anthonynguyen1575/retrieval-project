@@ -13,38 +13,6 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class DocumentLoader:
-    """
-    Load and parse documents from the file system.
-    """
-
-    def load_documents(self, directory: str) -> list[dict]:
-        """
-        Load all text documents from a directory.
-
-        Args:
-            directory: Path to a directory containing documents
-
-        Returns:
-            List of documents, each with 'id', 'text' and 'metadata'.
-        """
-        documents = []
-        path = Path(directory)
-        if not path.is_dir() or not path.exists():
-            raise ValueError(f"Directory '{directory}' does not exist.")
-        for filepath in path.glob("*.txt"):
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    text = f.read().strip()
-                if text:
-                    documents.append(
-                        {"id": filepath.stem, "text": text, "metadata": {"filename": filepath.name}}
-                    )
-            except Exception as e:
-                logger.warning(f"Warning: Failed to load document {filepath} : {e}")
-        return documents
-
-
 class DocumentChunker:
     """Chunk documents into smaller pieces for better retrieval."""
 
@@ -79,3 +47,64 @@ class DocumentChunker:
             start = end - self.overlap
             chunk_num += 1
         return chunks
+
+
+class DocumentLoader:
+    """
+    Load and parse documents from the file system.
+    """
+
+    def __init__(self, chunker: DocumentChunker = None):
+        """Initialize loader with optional chunker"""
+        self.chunker = chunker
+
+    def load_documents(self, directory: str) -> list[dict]:
+        """
+        Load all text documents from a directory.
+
+        Args:
+            directory: Path to a directory containing documents
+
+        Returns:
+            List of documents, each with 'id', 'text' and 'metadata'.
+        """
+        documents = []
+        path = Path(directory)
+        if not path.is_dir() or not path.exists():
+            raise ValueError(f"Directory '{directory}' does not exist.")
+        for filepath in path.glob("*.txt"):
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    text = f.read().strip()
+                if text:
+                    documents.append(
+                        {"id": filepath.stem, "text": text, "metadata": {"filename": filepath.name}}
+                    )
+            except Exception as e:
+                logger.warning(f"Warning: Failed to load document {filepath} : {e}")
+        return documents
+
+    def _load_text_file(self, filepath: Path) -> list[dict]:
+        """Load a single txt file"""
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                text = f.read().strip()
+
+            if not text:
+                return []
+
+            doc_id = filepath.stem
+            metadata = {"filename": filepath.stem, "type": "txt"}
+
+            if self.chunker:
+                chunks = self.chunker.chunk_text(text, doc_id)
+                # add filename to each chunk's metadata
+                for chunk in chunks:
+                    chunk["metadata"].update(metadata)
+                return chunks
+            else:
+                return [{"id": doc_id, "text": text, "metadata": metadata}]
+
+        except Exception as e:
+            logger.warning(f"Warning: Failed to load document {filepath} : {e}")
+            return []
