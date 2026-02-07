@@ -131,3 +131,28 @@ def test_index_empty_directory(retriever, tmp_path):
     retriever.index_documents(empty_dir)
 
     assert retriever.document_count == 0
+
+
+def test_with_chunks(retriever):
+    test_dir = Path(__file__).parent
+    sample_dir = str(test_dir / "data")
+    retriever.index_documents(sample_dir)
+    results = retriever.search("Is a crucifix better than a garlic as a vampire repellent?")
+
+    # check that the five distance add up to something pretty small
+    distance_sum = sum(result["distance"] for result in results)
+    assert 0.1 < distance_sum <= 8.0
+
+    # it seems likely that each passage has one of the key words from the query
+    for result in results:
+        passage = result["text"]
+        assert "garlic" in passage or "crucifix" in passage or "vampire" in passage
+
+    # running the test case, we discover the current best passages
+    # (This may be brittle as we upgrade the embedding model!)
+    chunks = set(result["metadata"]["chunk"] for result in results)
+    assert chunks & {373, 257, 568, 206}  # picked at least one of these
+
+    results = retriever.search("What MSAI courses are 5 credits?")
+    assert len(results) > 0
+    assert "5 credits" in results[0]["text"]

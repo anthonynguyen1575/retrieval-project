@@ -14,28 +14,26 @@ Seattle University, ARIN 5360
 </head>
 <body>
 <div class="container">
-    <h1>Lab3: Document Retrieval System</h1>
+    <h1>Lab4: Document Retrieval System</h1>
     <p style="text-align: center; color: #666;">
         Semantic search using ChromaDB and sentence transformers
     </p>
-
-    <!-- Search section -->
-    <div class="search-section">
-        <input type="text" id="queryInput" placeholder="Enter your search query..."/>
-        <button id="searchButton" onclick="performSearch()">Search</button>
-    </div>
-
-    <!-- Results section -->
-    <div id="results"></div>
-
     <!-- Health section -->
     <div class="health-section">
         <!-- Display server health status -->
         <button id="healthButton" onclick="displayHealth()">How am I feeling?</button>
         <div id="health-status">Not sure right now</div>
     </div>
-</div>
 
+    <!-- Search section -->
+    <div class="search-section">
+        <input type="text" id="queryInput" placeholder="Enter your search query..." style="width:420px;height:44px;font-size:16px;padding: 8px 12px;"/>
+        <button id="searchButton" onclick="performSearch()">Search</button>
+    </div>
+
+    <!-- Results section -->
+    <div id="results"></div>
+</div>
 <script>
     async function performSearch() {
         const query = document.getElementById('queryInput').value;
